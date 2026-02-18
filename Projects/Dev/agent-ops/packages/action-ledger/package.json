@@ -1,0 +1,40 @@
+{
+  "name": "@agent-ops/action-ledger",
+  "version": "0.1.0",
+  "description": "Append-only JSONL log of every tool call, file diff, command, and outcome",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./cli/unified-hook": "./dist/cli/unified-hook.js",
+    "./cli/verify-ledger": "./dist/cli/verify-ledger.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "bin": {
+    "action-ledger-hook": "dist/cli/unified-hook.js",
+    "action-ledger-verify": "dist/cli/verify-ledger.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": [
+    "agent-ops",
+    "governance",
+    "audit",
+    "jsonl",
+    "ledger"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.2.3"
+  }
+}

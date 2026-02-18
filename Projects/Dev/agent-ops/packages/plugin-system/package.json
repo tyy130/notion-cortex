@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/plugin-system",
+  "version": "0.1.0",
+  "description": "Drop-in capability plugins for validators, routers, and connectors",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "interop"],
+  "license": "MIT"
+}

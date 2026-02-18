@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/caching-layer",
+  "version": "0.1.0",
+  "description": "Semantic cache for repeated queries against the same code sections",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "economics"],
+  "license": "MIT"
+}

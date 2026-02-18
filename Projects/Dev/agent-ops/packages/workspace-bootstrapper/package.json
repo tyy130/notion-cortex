@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/workspace-bootstrapper",
+  "version": "0.1.0",
+  "description": "Create a standard repo layout for agent-ops projects",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "interop"],
+  "license": "MIT"
+}

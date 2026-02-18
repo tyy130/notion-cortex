@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/prompt-provenance",
+  "version": "0.1.0",
+  "description": "Version prompts and capture which prompt produced which change or PR",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "governance"],
+  "license": "MIT"
+}

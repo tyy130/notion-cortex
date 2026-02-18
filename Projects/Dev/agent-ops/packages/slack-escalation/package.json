@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/slack-escalation",
+  "version": "0.1.0",
+  "description": "Post needs-approval items to Slack with diff snippets and action buttons",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "interop"],
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/token-cost-dash",
+  "version": "0.1.0",
+  "description": "Track spend per task, per repo, and per model",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "economics"],
+  "license": "MIT"
+}

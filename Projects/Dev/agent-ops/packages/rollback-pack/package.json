@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/rollback-pack",
+  "version": "0.1.0",
+  "description": "Auto-create undo plans including git branches and migration rollback hints",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "safety"],
+  "license": "MIT"
+}

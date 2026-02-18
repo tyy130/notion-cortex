@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/policy-pack",
+  "version": "0.1.0",
+  "description": "YAML policy files for data exfil rules, allowed domains, and redaction",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "governance"],
+  "license": "MIT"
+}
