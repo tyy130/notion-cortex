@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/mcp-connector-kit",
+  "version": "0.1.0",
+  "description": "Templates for writing MCP servers for filesystem, tickets, and notes",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "interop"],
+  "license": "MIT"
+}

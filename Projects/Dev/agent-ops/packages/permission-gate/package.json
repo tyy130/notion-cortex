@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/permission-gate",
+  "version": "0.1.0",
+  "description": "Allowlist/denylist for commands and paths with RBAC-style roles",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "governance"],
+  "license": "MIT"
+}

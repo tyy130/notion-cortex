@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/latency-profiler",
+  "version": "0.1.0",
+  "description": "Measure time spent in think vs tool vs retry phases",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "economics"],
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/diff-quality-scorer",
+  "version": "0.1.0",
+  "description": "Score PR diffs for risk based on touched areas like auth and payments",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "reliability"],
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/tool-boundary-tester",
+  "version": "0.1.0",
+  "description": "Probe what is sandboxed vs not and report a capability matrix",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "safety"],
+  "license": "MIT"
+}

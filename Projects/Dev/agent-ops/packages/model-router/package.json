@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/model-router",
+  "version": "0.1.0",
+  "description": "Route tasks by class and budget, using cheaper models for simple work",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "economics"],
+  "license": "MIT"
+}

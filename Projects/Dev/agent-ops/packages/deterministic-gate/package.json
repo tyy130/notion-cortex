@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/deterministic-gate",
+  "version": "0.1.0",
+  "description": "Schema, lint, typecheck, and unit test gate that must pass before proceeding",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "reliability"],
+  "license": "MIT"
+}

@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/command-risk-scorer",
+  "version": "0.1.0",
+  "description": "Assign risk scores to commands and require escalations by threshold",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "safety"],
+  "license": "MIT"
+}

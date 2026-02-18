@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/test-coverage-coach",
+  "version": "0.1.0",
+  "description": "Find untested areas and generate test plan checklists",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "reliability"],
+  "license": "MIT"
+}

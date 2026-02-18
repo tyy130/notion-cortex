@@ -1,0 +1,14 @@
+{
+  "name": "@agent-ops/budget-throttle",
+  "version": "0.1.0",
+  "description": "Cap daily spend and auto-downgrade models or pause the queue",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "eslint src"
+  },
+  "keywords": ["agent-ops", "economics"],
+  "license": "MIT"
+}
