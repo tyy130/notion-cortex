@@ -1,7 +1,7 @@
-# Phase 2: General AGI — Epistemic Foraging, Trace Memory & Venture Orchestration
+# Phase 2: General AGI — Epistemic Foraging, Trace Memory & Domain Context Engine
 
 **Date:** 2026-03-13
-**Status:** Reviewed
+**Status:** Revised — Venture Registry replaced by Domain Context Engine
 **Repo:** `~/Dev/agi/`
 **Depends on:** Phase 1 (PPVE Inner Loop + Dual-Loop Outer Loop) — fully operational
 
@@ -9,15 +9,15 @@
 
 ## 1. Problem Statement
 
-The Phase 1 agent is a capable Local Operator: it reasons, self-heals, and persists state. But it is epistemically closed — it cannot acquire knowledge it wasn't trained on, it has no memory of past sessions, and it has no concept of which business venture it is serving.
+The Phase 1 agent is a capable Local Operator: it reasons, self-heals, and persists state. But it is epistemically closed — it cannot acquire knowledge it wasn't trained on, it has no memory of past sessions, and it is blind to the domain it is operating in.
 
 Phase 2 upgrades it along three axes:
 
 | Axis | Gap today | Capability after Phase 2 |
 |---|---|---|
-| Knowledge | Hallucinate or fail on unknown topics | Forage live web before planning |
+| Knowledge | Hallucinates or fails on unknown topics | Forages live web before planning |
 | Memory | Stateless across sessions | Vectorized trace recall (domain-partitioned) |
-| Identity | Single generic agent | Venture-aware via YAML registry |
+| Context | Generic agent blind to task domain | Classifies intent + scans environment; adapts system prompt dynamically |
 
 ---
 
@@ -26,136 +26,210 @@ Phase 2 upgrades it along three axes:
 Three new capability layers wrap the existing PPVE loop without modifying it:
 
 ```
-┌─────────────────────────────────────────────────┐
-│         ORCHESTRATOR (sync, before asyncio.run)  │
-│  Detect venture → load YAML → build AgentDeps   │
-│  → prepend context_injection to system prompt   │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│               INNER LOOP (PPVE) — unchanged      │
-│  ┌─────────────┐ ┌─────────────┐ ┌───────────┐ │
-│  │ tool_search │ │ tool_recall │ │ existing  │ │
-│  │  (Tavily)   │ │ (pgvector)  │ │  tools    │ │
-│  └─────────────┘ └─────────────┘ └───────────┘ │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│         OUTER LOOP (Reflective Healer) — unchanged│
-│  recovery_agent → remediate → resume             │
-└────────────────────┬────────────────────────────┘
-                     │
-┌────────────────────▼────────────────────────────┐
-│    MEMORY COMMIT (async, scheduled in run())     │
-│  asyncio.create_task(store_trace(...)) after     │
-│  sm.mark_complete() — does not block user        │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│       DOMAIN CONTEXT ENGINE (sync, before asyncio.run)  │
+│  Classify intent → scan cwd → load context shards       │
+│  → build TaskContext → prepend dynamic prompt section   │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│               INNER LOOP (PPVE) — unchanged              │
+│  ┌─────────────┐ ┌─────────────┐ ┌───────────────────┐ │
+│  │ tool_search │ │ tool_recall │ │  existing tools   │ │
+│  │  (Tavily)   │ │ (pgvector)  │ │ read/write/shell  │ │
+│  └─────────────┘ └─────────────┘ └───────────────────┘ │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│         OUTER LOOP (Reflective Healer) — unchanged       │
+│  recovery_agent → remediate → resume                     │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│    MEMORY COMMIT (async, scheduled in run())             │
+│  asyncio.create_task(store_trace(...)) after             │
+│  sm.mark_complete() — does not block user                │
+└─────────────────────────────────────────────────────────┘
 ```
 
 **New files:**
 - `reasoning_agent/forager.py` — Tavily search client + `tool_search`
 - `reasoning_agent/memory.py` — pgvector client + `tool_recall` + `store_trace`
-- `reasoning_agent/orchestrator.py` — venture detection + context injection
-- `ventures/tacticdev.yaml` — reference venture configuration
+- `reasoning_agent/orchestrator.py` — task classification + environment scanning + context shard loading
 
 **Modified files:**
-- `reasoning_agent/schemas.py` — add `SearchInput`, `SearchOutput`, `RecallInput`, `RecallOutput`, `PastTrace`, `VentureConfig`; add `ActionType.SEARCH` and `ActionType.RECALL` to the `ActionType` enum
-- `reasoning_agent/deps.py` — add `venture: VentureConfig | None = None`, `memory_namespace: str = "general"`
-- `reasoning_agent/agent.py` — register `tool_search`, `tool_recall`; extend system prompt
-- `reasoning_agent/main.py` — switch to `argparse` (adds `--venture`, keeps `--resume`); call orchestrator synchronously before `asyncio.run()`; schedule `store_trace` as `asyncio.create_task` inside async `run()` after `sm.mark_complete()`
-- `reasoning_agent/tools.py` — add `high_risk_tools` interception at top of `tool_write` (threshold override) and top of `tool_shell` (early `NeedsHumanClarification` raise)
-- `requirements.txt` — add `tavily-python`, `rapidfuzz`, `asyncpg` (truly-async Neon writes); `psycopg2-binary` already present; `openai` already installed
+- `reasoning_agent/schemas.py` — add `TaskIntent`, `EnvScope`, `ContextShard`, `TaskContext`, `SearchInput`, `SearchOutput`, `SearchResult`, `RecallInput`, `RecallOutput`, `PastTrace`; add `ActionType.SEARCH` and `ActionType.RECALL`
+- `reasoning_agent/deps.py` — add `task_context: TaskContext | None = None`; `memory_namespace` becomes a derived `__post_init__` field
+- `reasoning_agent/agent.py` — register `tool_search`, `tool_recall`; extend static `SYSTEM_PROMPT` with Foraging and Memory sections; add `@_agent.system_prompt` decorated function to inject `task_context.dynamic_prompt` per-run (see Section 3.4)
+- `reasoning_agent/main.py` — argparse CLI (keeps `--resume`, no `--venture`); call orchestrator synchronously before `asyncio.run()`; schedule `store_trace` with `asyncio.shield + wait_for(10s)` in `run()`
+- `requirements.txt` — add `tavily-python`, `asyncpg`, `openai` (explicit pin for embeddings API)
 
-**Zero changes to:** `preflight.py`, `recovery.py`, `state.py`
+**Zero changes to:** `preflight.py`, `recovery.py`, `state.py`, `tools.py`
 
 ---
 
-## 3. Venture Registry & Orchestrator
+## 3. Domain Context Engine (`orchestrator.py`)
 
-### 3.1 Venture YAML Schema
+The orchestrator runs **synchronously in `main()` before `asyncio.run()`**. It has two jobs:
 
-Every venture is a single YAML file in `ventures/`. Adding a new venture requires no code changes.
+1. **Task Intent Classification** — what kind of task is this?
+2. **Universal Context Loading** — what does the working directory tell us?
 
-```yaml
-# ventures/tacticdev.yaml
-venture_name: "TacticDev"
-domain: "AI Agency / Dev Tools"
-aliases:
-  - "tactic"
-  - "tacticdev"
-  - "agency"
-priority_tools:
-  - tavily_search
-  - neon_postgres
-high_risk_tools:
-  - tool_shell      # always requires human approval in this venture context
-context_injection: |
-  You are operating as the TacticDev AI engine.
-  TacticDev builds AI automations and agentic systems for SMBs.
-  Prioritize developer-facing solutions. When foraging, prefer
-  technical sources (GitHub, docs, arXiv) over news articles.
-  Check existing client schemas in the DB before proposing
-  new data structures.
-memory_namespace: "tacticdev"
+Its output is a `TaskContext` that is forwarded into `AgentDeps`, which the agent uses to adapt its system prompt and set the memory namespace.
+
+### 3.1 Task Intent Classification
+
+The orchestrator performs keyword-based classification of the task string. This is intentionally lightweight — deterministic, instant, free. It can be upgraded to an LLM zero-shot call if more accuracy is needed, but heuristics cover the practical cases.
+
+```python
+class TaskIntent(str, Enum):
+    RESEARCH  = "research"   # market data, analysis, comparison, surveys
+    CODE      = "code"       # implement, fix, debug, refactor, test, build
+    SYSADMIN  = "sysadmin"   # install, configure, deploy, server, migration
+    DATA      = "data"       # SQL, schema, database, ETL, dataset, pipeline
+    CREATIVE  = "creative"   # write, draft, compose, proposal, blog, email
+    GENERAL   = "general"    # catch-all, no strong signal
+
+class EnvScope(str, Enum):
+    LOCAL_FILES   = "local_files"    # files detected in cwd
+    EXTERNAL_WEB  = "external_web"   # RESEARCH intent + no local context
+    DATABASE      = "database"       # .sql, schema files, or DATABASE_URL set
+    MIXED         = "mixed"          # multiple signals present
 ```
 
-**Pydantic model** (added to `schemas.py`):
+**Classification algorithm** in `orchestrator.py`:
+
 ```python
-class VentureConfig(BaseModel):
-    venture_name: str
-    domain: str
-    aliases: list[str] = []
-    priority_tools: list[str] = []
-    high_risk_tools: list[str] = []
-    context_injection: str = ""
-    memory_namespace: str = ""  # defaults to venture_name.lower() if empty
+_INTENT_KEYWORDS: dict[TaskIntent, list[str]] = {
+    TaskIntent.RESEARCH:  ["research", "analyze", "market", "compare",
+                           "investigate", "survey", "report", "what is", "trend"],
+    TaskIntent.CODE:      ["implement", "fix", "bug", "refactor", "function",
+                           "test", "build", "compile", "class", "module"],
+    TaskIntent.SYSADMIN:  ["install", "configure", "server", "docker",
+                           "systemd", "cron", "migrate", "backup", "deploy"],
+    TaskIntent.DATA:      ["database", "sql", "schema", "query", "csv",
+                           "dataset", "pipeline", "etl", "table", "column"],
+    TaskIntent.CREATIVE:  ["write", "draft", "compose", "story",
+                           "blog", "email", "proposal", "essay"],
+}
+
+def _classify_intent(task: str) -> TaskIntent:
+    task_lower = task.lower()
+    scores = {intent: sum(1 for kw in kws if kw in task_lower)
+              for intent, kws in _INTENT_KEYWORDS.items()}
+    best = max(scores, key=scores.get)
+    return best if scores[best] > 0 else TaskIntent.GENERAL
+```
+
+### 3.2 Universal Context Loader (Context Shards)
+
+The orchestrator scans the current working directory for files that reveal the project's nature. No YAML config required — the environment is the config.
+
+```python
+class ContextShard(BaseModel):
+    source: str      # filename (relative)
+    content: str     # first 200 chars extracted
+    shard_type: str  # "readme", "schema", "package", "requirements", "unknown"
+```
+
+**File signatures scanned** (in order of priority):
+
+| Pattern | `shard_type` | What it reveals |
+|---|---|---|
+| `README.md`, `README.rst` | `readme` | Project purpose, language, conventions |
+| `*.schema.sql`, `schema.sql`, `migrations/*.sql` | `schema` | DB structure → DATA scope |
+| `package.json` | `package` | Node.js project, dependencies |
+| `requirements.txt`, `pyproject.toml` | `requirements` | Python project, dependencies |
+| `CLAUDE.md` | `readme` | Existing agent instructions |
+| `*.stl`, `*.obj`, `*.gcode` | `cad` | CAD/manufacturing context |
+| `*.yaml`, `*.yml` (non-system) | `config` | Configuration-heavy project |
+
+Up to **5 shards** are loaded per run to stay within system prompt limits.
+
+**EnvScope detection** follows intent + file presence:
+
+```python
+def _detect_env_scope(intent: TaskIntent, shards: list[ContextShard]) -> EnvScope:
+    shard_types = {s.shard_type for s in shards}
+    has_schema = "schema" in shard_types
+    has_local = len(shards) > 0
+
+    if has_schema:
+        return EnvScope.DATABASE if intent == TaskIntent.DATA else EnvScope.MIXED
+    if not has_local and intent == TaskIntent.RESEARCH:
+        return EnvScope.EXTERNAL_WEB
+    if has_local and intent in (TaskIntent.RESEARCH, TaskIntent.DATA):
+        return EnvScope.MIXED
+    return EnvScope.LOCAL_FILES if has_local else EnvScope.EXTERNAL_WEB
+```
+
+### 3.3 `TaskContext` Model
+
+```python
+class TaskContext(BaseModel):
+    intent: TaskIntent
+    env_scope: EnvScope
+    context_shards: list[ContextShard] = Field(default_factory=list)
+    dynamic_prompt: str = ""        # generated section, prepended to system prompt
+    memory_namespace: str = ""      # derived from intent if not set
 
     @model_validator(mode="after")
-    def _set_namespace_default(self) -> "VentureConfig":
+    def _derive_namespace(self) -> "TaskContext":
         if not self.memory_namespace:
-            self.memory_namespace = self.venture_name.lower().replace(" ", "_")
+            self.memory_namespace = self.intent.value   # e.g., "code", "research"
         return self
 ```
 
-### 3.2 Auto-Detection Logic
+### 3.4 Dynamic System Prompt Generation
 
-**Critical: the orchestrator runs synchronously in `main()` before `asyncio.run()`**, so blocking `input()` for the confirmation prompt is safe — no event loop is running yet.
+The `dynamic_prompt` is injected per-run using PydanticAI's `@agent.system_prompt` decorator. The agent singleton (`_agent`) is constructed once with the static `SYSTEM_PROMPT`; the decorator adds a **second system prompt block** that PydanticAI appends on each run, pulling from `ctx.deps.task_context`. This avoids refactoring the singleton while still getting per-invocation context.
 
-Flow in `orchestrator.py` → `detect_venture(task: str, venture_dir: Path) -> VentureConfig | None`:
-
-1. **Directory check:** if `ventures/` does not exist, print a warning and return `None` (general mode). Do not raise — absence of ventures is a valid state.
-2. **Tokenize** the task string (lowercase, strip punctuation)
-3. **Score** each `ventures/*.yaml` against `venture_name + domain + aliases` using `rapidfuzz.fuzz.token_set_ratio`
-4. **Route:**
-   - Score ≥ 75 → load venture, print `"Venture detected: TacticDev. Loading AI Agency context."`
-   - Score 50–74 → print `"Did you mean TacticDev? (y/n)"`, call blocking `input()`, load if confirmed
-   - Score < 50 → return `None` (general mode, no message)
-5. **`--venture` override:** parse YAML at `ventures/<name>.yaml` directly; raise a clear `FileNotFoundError` with a user-friendly message if the file is missing
-
-### 3.3 `high_risk_tools` Integration with PPVE
-
-Two separate interception points, not a single mechanism:
-
-**`tool_write`** — at the top of the function, before `perform_action()`:
 ```python
-if ctx.deps.venture and "tool_write" in ctx.deps.venture.high_risk_tools:
-    raise NeedsHumanClarification(
-        f"tool_write is listed as high-risk for venture "
-        f"'{ctx.deps.venture.venture_name}'. Explicit approval required."
-    )
-```
-If `"tool_write"` is in `venture.high_risk_tools`, bypass `perform_action()` entirely and route straight to human.
+# In agent.py, after _agent is constructed:
 
-**`tool_shell`** — at the top of the function, before the regex blocklist:
-```python
-if ctx.deps.venture and "tool_shell" in ctx.deps.venture.high_risk_tools:
-    raise NeedsHumanClarification(
-        f"tool_shell is listed as high-risk for venture "
-        f"'{ctx.deps.venture.venture_name}'. Explicit approval required."
-    )
+@_agent.system_prompt
+async def _inject_context(ctx: RunContext[AgentDeps]) -> str:
+    if ctx.deps.task_context and ctx.deps.task_context.dynamic_prompt:
+        return ctx.deps.task_context.dynamic_prompt
+    return ""
 ```
 
-Both checks happen before any execution, before pattern matching, before preflight. The effect for both tools is identical: `NeedsHumanClarification` is raised and the human gate in `main.py` handles it.
+PydanticAI concatenates all system prompt blocks (static + dynamic) before the first model call. The order is: static `SYSTEM_PROMPT` first, then `_inject_context` output.
+
+The `dynamic_prompt` content tells the agent what context it is operating in and which tools to prioritize.
+
+**Intent → tool priority mapping:**
+
+| Intent | System prompt effect |
+|---|---|
+| RESEARCH | "tool_search is your PRIMARY tool. Call it before planning." |
+| CODE | "Verify that code compiles/tests pass before calling tool_write." |
+| SYSADMIN | "Treat every shell command as potentially destructive. State your plan before executing." |
+| DATA | "Call tool_recall first; prior DB work is likely in memory. Confirm schema before mutating." |
+| CREATIVE | "Produce a draft first; write the final version only after reviewing it." |
+| GENERAL | No tool priority override — default PPVE behavior. |
+
+**Format of generated `dynamic_prompt`:**
+
+```
+DOMAIN CONTEXT (auto-detected):
+Intent: {intent.value.upper()} | Scope: {env_scope.value}
+
+{tool_priority_line}
+
+ENVIRONMENTAL CONTEXT:
+{for each shard: "--- {source} ---\n{content}\n"}
+```
+
+The orchestrator function signature:
+
+```python
+def build_context(task: str, cwd: Path | None = None) -> TaskContext:
+    """
+    Classify task intent, scan cwd for context shards, build dynamic prompt.
+    Pure sync — no I/O beyond local file reads. Safe to call before asyncio.run().
+    """
+```
 
 ---
 
@@ -167,17 +241,17 @@ New entries in `schemas.py`:
 
 ```python
 class ActionType(str, Enum):
-    READ = "read"
-    WRITE = "write"
-    QUERY = "query"
-    SHELL = "shell"
+    READ   = "read"
+    WRITE  = "write"
+    QUERY  = "query"
+    SHELL  = "shell"
     SEARCH = "search"   # NEW
     RECALL = "recall"   # NEW
 
 class SearchInput(BaseModel):
     query: str
-    max_results: int = Field(default=5, le=10)
-    rationale: str    # required, logged to agent_state.json
+    max_results: int = Field(default=5, ge=1, le=10)
+    rationale: str    # required — forces epistemic metacognition
 
 class SearchResult(BaseModel):
     title: str
@@ -194,15 +268,15 @@ class SearchOutput(BaseModel):
 ### 4.2 Implementation Notes
 
 - Tavily client initialized lazily inside `forager.py` (same SOCKS-proxy-safe singleton pattern as `get_agent()`)
-- `TAVILY_API_KEY` validated at startup in `main.py` proxy-clearing block; if missing, print a warning but do not crash — agent runs without search capability and system prompt notes the limitation
+- `TAVILY_API_KEY` validated at startup in `main.py`; if missing, print a warning but do not crash — agent runs without search capability and system prompt notes the limitation
 - Results logged as `ActionType.SEARCH` / `LoopPhase.EXECUTE` steps in `agent_state.json`
-- `tool_search` bypasses the PPVE write gate (reads are unrestricted) — same pattern as `tool_read`
+- `tool_search` bypasses the PPVE write gate — same pattern as `tool_read`
 - Agent discards results with `relevance_score < 0.3` before incorporating into plan
 
 **Error handling in `tool_search`:**
-- Tavily 401 (bad key) → catch, return `SearchOutput(results=[], total_found=0)` with a logged error note; do not propagate to outer loop (a missing search key is not a fixable environment error)
+- Tavily 401 (bad key) → catch, return `SearchOutput(results=[], total_found=0)` with logged error note; do not propagate to outer loop
 - Tavily 5xx / timeout → catch, same empty result return with error note
-- Empty result set (all scores < 0.3) → return results as-is; the system prompt instructs the agent to report "not yet publicly available" rather than speculate
+- Empty result set (all scores < 0.3) → return results as-is; system prompt instructs agent to report "not yet publicly available" rather than speculate
 
 ### 4.3 System Prompt Addition
 
@@ -211,7 +285,7 @@ EPISTEMIC FORAGING PROTOCOL:
 Before planning any task involving:
   - Market data, trends, or current events
   - Libraries, APIs, or tools you are uncertain about
-  - Venture-specific domain knowledge not present in local files
+  - Domain-specific knowledge not present in local files
   - Any factual claim you are not confident about
 
 → Call tool_search() FIRST with a specific rationale.
@@ -241,14 +315,16 @@ CREATE TABLE IF NOT EXISTS trace_memory (
 );
 
 -- hnsw index: handles empty tables gracefully, no cold-start issue
--- ivfflat is not used: it requires >= lists*3 rows before queries are reliable
+-- ivfflat is not used: requires >= lists*3 rows before queries are reliable
 CREATE INDEX IF NOT EXISTS trace_memory_embedding_idx
     ON trace_memory
     USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 ```
 
-**Embedding model coupling:** `VECTOR(1536)` is coupled to `text-embedding-3-small`. If the model is changed to `text-embedding-3-large` (3072 dims), the column and index must be recreated. This is an intentional constraint documented here. Do not change the embedding model without a schema migration.
+**Embedding model coupling:** `VECTOR(1536)` is coupled to `text-embedding-3-small`. If the model is changed to `text-embedding-3-large` (3072 dims), the column and index must be recreated. This is an intentional constraint. Do not change the embedding model without a schema migration.
+
+**Memory namespace:** Derived from `task_context.intent.value` (e.g., `"code"`, `"research"`, `"data"`). A task classified as GENERAL uses `"general"`. This partitions traces by functional domain, enabling the agent to recall "how I debugged a Python import error" when next given a code task.
 
 ### 5.2 `store_trace` (write path)
 
@@ -257,7 +333,7 @@ CREATE INDEX IF NOT EXISTS trace_memory_embedding_idx
 ```python
 # in run(), after sm.mark_complete(result.output):
 sm.mark_complete(result.output)
-asyncio.create_task(
+trace_task = asyncio.create_task(
     store_trace(
         namespace=deps.memory_namespace,
         task=task,
@@ -265,6 +341,10 @@ asyncio.create_task(
         outcome=result.output,
     )
 )
+try:
+    await asyncio.wait_for(asyncio.shield(trace_task), timeout=10.0)
+except asyncio.TimeoutError:
+    print("[Memory] store_trace timed out — trace not persisted.", file=sys.stderr)
 return result.output
 ```
 
@@ -274,8 +354,8 @@ Steps inside `store_trace`:
 1. Compress the session's `steps` list into a structured summary (phases, tool call names, key decisions, errors encountered)
 2. Concatenate `task + "\n" + trace + "\n" + outcome` as the embedding input
 3. Call `openai.AsyncOpenAI().embeddings.create(model="text-embedding-3-small", input=...)` → 1536-dim vector
-4. Assert `len(embedding_vector) == 1536` before inserting — guards against accidental model string changes that would produce a dimension mismatch in pgvector
-5. `INSERT INTO trace_memory (namespace, task, trace, outcome, embedding)` using `asyncpg` (truly async — never blocks the event loop). Connection opened with `asyncpg.connect(DATABASE_URL)` per call (connection pool is overkill for a background task)
+4. Assert `len(embedding_vector) == 1536` — guards against accidental model string changes that would produce a dimension mismatch in pgvector
+5. `INSERT INTO trace_memory (namespace, task, trace, outcome, embedding)` via `asyncpg` (truly async — never blocks the event loop). Connection opened per call — no pool needed for a background fire-and-forget
 
 ### 5.3 `tool_recall` (read path)
 
@@ -284,12 +364,12 @@ New entries in `schemas.py`:
 ```python
 class RecallInput(BaseModel):
     query: str
-    top_k: int = 3
+    top_k: int = Field(default=3, ge=1, le=10)
     rationale: str    # required, logged
 
 class PastTrace(BaseModel):
     task: str
-    trace: str         # the compressed reasoning path — this is why the agent recalls
+    trace: str         # the compressed reasoning path — core learning artifact
     outcome: str
     similarity: float
     created_at: datetime
@@ -331,23 +411,33 @@ Do NOT re-derive what has already been learned.
 ## 6. Updated `AgentDeps`
 
 ```python
+from dataclasses import dataclass, field
+
 @dataclass
 class AgentDeps:
     state_manager: StateManager
-    venture: VentureConfig | None = None      # None = general mode
-    memory_namespace: str = "general"         # derived from venture or default
+    task_context: TaskContext | None = None    # None = unclassified general mode
+    memory_namespace: str = field(init=False)  # always derived — never set by caller
+
+    def __post_init__(self) -> None:
+        self.memory_namespace = (
+            self.task_context.memory_namespace
+            if self.task_context is not None
+            else "general"
+        )
 ```
+
+`memory_namespace` is a derived field (`field(init=False)`) — callers only set `task_context`. This eliminates the silent footgun of the two fields diverging.
 
 ---
 
 ## 7. CLI Interface
 
-`main.py` switches from naive `sys.argv` parsing to `argparse`:
+`main.py` switches from naive `sys.argv` parsing to `argparse`. The `--venture` flag is removed — context is auto-detected:
 
 ```python
 parser = argparse.ArgumentParser(prog="reasoning_agent")
 parser.add_argument("task", nargs="*", help="Task description")
-parser.add_argument("--venture", default=None, help="Venture name to load context for")
 parser.add_argument("--resume", action="store_true", help="Resume previous session")
 args = parser.parse_args()
 ```
@@ -355,41 +445,44 @@ args = parser.parse_args()
 Usage examples:
 
 ```bash
-# General mode
+# General mode — orchestrator classifies intent from the task
 python -m reasoning_agent "Summarize all Python files"
+# → [Orchestrator] Intent: CODE | Scope: LOCAL_FILES
 
-# Explicit venture
-python -m reasoning_agent --venture tacticdev "Review our MCP architecture"
+# Research task — orchestrator elevates tool_search
+python -m reasoning_agent "What is the 2026 market size for AI coding assistants?"
+# → [Orchestrator] Intent: RESEARCH | Scope: EXTERNAL_WEB
 
-# Auto-detected venture (orchestrator runs before asyncio.run)
-python -m reasoning_agent "What's the TacticDev client pipeline looking like?"
-# → "Venture detected: TacticDev. Loading AI Agency context."
+# CAD context auto-detected from cwd containing .stl files
+python -m reasoning_agent "Check for manifold errors in the bracket design"
+# → [Orchestrator] Intent: CODE | Scope: LOCAL_FILES
+# → [Context] bracket_v3.stl, README.md loaded as shards
 
-# Resume with venture
-python -m reasoning_agent --venture tacticdev --resume "Continue the previous task"
+# Resume previous session
+python -m reasoning_agent --resume "Continue the previous task"
 ```
 
-Orchestrator is called synchronously in `main()` before `asyncio.run(run(...))`. The `run()` signature gains a `venture` parameter which is forwarded into `AgentDeps`:
+The `run()` signature gains a `task_context` parameter forwarded into `AgentDeps`:
 
 ```python
 async def run(
     task: str,
     resume: bool = False,
-    venture: VentureConfig | None = None,
+    task_context: TaskContext | None = None,
 ) -> str:
     ...
     deps = AgentDeps(
         state_manager=sm,
-        venture=venture,
-        memory_namespace=venture.memory_namespace if venture else "general",
+        task_context=task_context,
+        # memory_namespace is derived automatically in AgentDeps.__post_init__
     )
     ...
     # After sm.mark_complete(result.output):
-    task_obj = asyncio.create_task(store_trace(...))
+    trace_task = asyncio.create_task(store_trace(...))
     try:
-        await asyncio.wait_for(asyncio.shield(task_obj), timeout=10.0)
+        await asyncio.wait_for(asyncio.shield(trace_task), timeout=10.0)
     except asyncio.TimeoutError:
-        pass  # trace write in progress; log warning and return
+        print("[Memory] store_trace timed out — trace not persisted.", file=sys.stderr)
     return result.output
 
 
@@ -397,28 +490,30 @@ def main() -> None:
     args = parse_args()
     task = " ".join(args.task) or DEFAULT_TASK
 
-    # Sync — safe for blocking input() if confirmation needed
-    venture = load_venture(task, venture_flag=args.venture)
+    # Sync — safe; no event loop running yet
+    task_context = build_context(task, cwd=Path.cwd())
 
-    result = asyncio.run(run(task, resume=args.resume, venture=venture))
+    result = asyncio.run(run(task, resume=args.resume, task_context=task_context))
     ...
 ```
 
-**`asyncio.shield` + `wait_for` pattern (N4 fix):** `asyncio.run()` cancels all pending tasks when `run()` returns. A bare `create_task` would be garbage-collected before `store_trace` completes. The `shield` prevents cancellation; the 10-second timeout ensures the main function doesn't hang if the DB is unreachable. If the timeout fires, the trace is lost for this session (acceptable: memory is enhancement, not critical path).
+**`asyncio.shield` + `wait_for` pattern:** `asyncio.run()` cancels all pending tasks when `run()` returns. A bare `create_task` would be garbage-collected before `store_trace` completes. The `shield` prevents cancellation; the 10-second timeout ensures `main()` doesn't hang if the DB is unreachable.
 
 ---
 
 ## 8. Data Flow — Test Task
 
-> *"Research the current 2026 market saturation for AI-driven debt relief tools in California. Compare with the DebtLogic.ai DB schema. Suggest a competitive feature."*
+> *"Fix the manifold error in bracket_v3.stl."* (cwd contains `bracket_v3.stl`, `README.md`)
 
-1. **Orchestrator (sync):** no `ventures/debtlogic.yaml` → general mode; `memory_namespace = "general"`
-2. **Forager:** `tool_search("2026 AI debt relief California market saturation", rationale="Market data not in training corpus")` → Tavily returns 5 results with relevance scores; agent discards any < 0.3
-3. **Memory:** `tool_recall("debt relief fintech California competitive analysis", rationale="Check for prior research")` → empty on first run → agent proceeds fresh
-4. **Read:** `tool_read` on Neon → SELECT schema for DebtLogic tables
-5. **Synthesize:** agent compares market findings vs. schema gaps → proposes feature
-6. **Write:** `tool_write("output/debtlogic_feature_proposal.md")` → PPVE gate fires → preflight + verify → execute
-7. **Memory commit:** `asyncio.create_task(store_trace("general", task, steps, result))` → background write to pgvector
+1. **Orchestrator (sync):** task → intent=`CODE`, cwd scan finds `.stl` and `README.md` → shards loaded → `dynamic_prompt` built with "Verify before writing" emphasis → `memory_namespace = "code"`
+2. **Memory:** `tool_recall("manifold error STL fix", rationale="Check for prior trace")` → first run returns empty; future runs recall the fix pattern
+3. **Forager:** `tool_search("PLA+ manifold error tolerance fix", rationale="Domain not in training data")` → Tavily returns 3 results about valid manifold geometry
+4. **Read:** `tool_read("bracket_v3.stl")` → inspect geometry
+5. **Synthesize:** agent identifies face normals issue from Tavily results + trace recall
+6. **Write:** `tool_write("bracket_v3_fixed.stl")` → PPVE gate fires → preflight + verify → execute
+7. **Memory commit:** `store_trace(namespace="code", task=task, steps=sm.state.steps, outcome=result.output)` scheduled via `asyncio.create_task` → background write to pgvector
+
+Next time a `.stl` fix task is run, `tool_recall` returns the trace from step 7 with the reasoning path, including the manifold fix approach.
 
 ---
 
@@ -430,7 +525,8 @@ DATABASE_URL=...             # existing Neon connection — also used for trace_
 TAVILY_API_KEY=...           # new — obtain from app.tavily.com
 ```
 
-Note: `openai` Python package is already installed as a transitive dependency. `psycopg2-binary` is already installed (used by recovery agent). New additions to `requirements.txt`: `tavily-python`, `rapidfuzz`, `asyncpg`.
+New additions to `requirements.txt`: `tavily-python`, `asyncpg`, `openai` (explicit pin).
+`rapidfuzz` and `PyYAML` are NOT required — venture YAML loading is removed.
 
 ---
 
@@ -440,9 +536,10 @@ Note: `openai` Python package is already installed as a transitive dependency. `
 |---|---|
 | `TAVILY_API_KEY` missing | Warning at startup; `tool_search` returns empty results with error note; agent continues without foraging |
 | Tavily 5xx / timeout | `tool_search` catches exception, returns empty `SearchOutput`, logs error to state |
-| `ventures/` directory missing | Orchestrator warns to stdout, returns `None`, agent runs in general mode |
-| `--venture foo` with no `ventures/foo.yaml` | Clear `FileNotFoundError` with user-friendly message, exits before `asyncio.run()` |
-| `trace_memory` table not yet migrated | `tool_recall` catches `asyncpg.exceptions.UndefinedTableError` (or equivalent), returns empty `RecallOutput`, logs warning |
+| No files in cwd (empty project) | Orchestrator returns `TaskContext` with empty `context_shards`; dynamic prompt contains intent only; agent operates normally |
+| Unclassifiable task (all keyword scores = 0) | Intent defaults to `GENERAL`; no tool priority override; standard PPVE behavior |
+| `DATABASE_URL` missing or empty | `tool_recall` catches connection error (`asyncpg.InvalidCatalogNameError` or `OSError`), returns empty `RecallOutput`, logs warning; `store_trace` silently drops trace |
+| `trace_memory` table not yet migrated | `tool_recall` catches `asyncpg.exceptions.UndefinedTableError`, returns empty `RecallOutput`, logs warning |
 | `store_trace` times out (network, auth) | `asyncio.wait_for` fires after 10s; main returns with warning; trace lost for this session (acceptable — memory is enhancement, not critical path) |
 | Empty `trace_memory` (cold start) | `tool_recall` returns empty list; `hnsw` index handles empty tables without error |
 
@@ -451,12 +548,15 @@ Note: `openai` Python package is already installed as a transitive dependency. `
 ## 11. Success Criteria
 
 - [ ] `tool_search` returns Tavily results logged to `agent_state.json` with rationale
-- [ ] Venture auto-detection correctly routes "TacticDev" queries with score ≥ 75
-- [ ] `--venture tacticdev` loads the YAML without fuzzy matching
-- [ ] Missing `ventures/` directory prints a warning and falls through to general mode
-- [ ] `high_risk_tools` forces `NeedsHumanClarification` for both `tool_write` and `tool_shell` before any execution
+- [ ] Orchestrator correctly classifies "fix the bug in auth.py" as CODE intent
+- [ ] Orchestrator correctly classifies "research 2026 AI market trends" as RESEARCH intent
+- [ ] README.md in cwd is loaded as a context shard and appears in dynamic_prompt
+- [ ] RESEARCH intent elevates tool_search in the generated dynamic_prompt section
 - [ ] `store_trace` writes to Neon `trace_memory` without blocking agent completion
 - [ ] `tool_recall` returns `trace` + `outcome` + similarity, scoped to namespace
 - [ ] `tool_recall` on empty DB returns empty list, no error
-- [ ] Test task executes end-to-end: forage → recall → read schema → synthesize → write output → store trace
-- [ ] Adding a second venture YAML requires zero code changes
+- [ ] Memory namespace for a CODE task is `"code"`, for RESEARCH is `"research"`
+- [ ] RESEARCH intent with no local files produces `EnvScope.EXTERNAL_WEB`
+- [ ] DATA intent with a `.schema.sql` file in cwd produces `EnvScope.DATABASE`
+- [ ] Test task executes end-to-end: classify → load shards → forage → recall → synthesize → write → store trace
+- [ ] Agent in cwd with `.stl` files loads the CAD context shard automatically, no config required
