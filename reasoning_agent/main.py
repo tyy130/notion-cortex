@@ -46,8 +46,7 @@ from .schemas import TaskContext
 from .state import StateManager
 from .tools import NeedsHumanClarification
 
-# Memory import commented out until memory.py is created in Chunk 4.
-# from .memory import store_trace
+from .memory import store_trace
 
 _DEFAULT_TASK = (
     "List all Python files in the current directory and write a brief "
@@ -104,19 +103,13 @@ async def run(task: str, resume: bool = False, task_context: TaskContext | None 
 
             sm.mark_complete(result.output)
 
-            # Memory trace write — uncomment after memory.py is created (Task 12).
-            # trace_task = asyncio.create_task(
-            #     store_trace(
-            #         namespace=deps.memory_namespace,
-            #         task=task,
-            #         steps=sm.state.steps,
-            #         outcome=result.output,
-            #     )
-            # )
-            # try:
-            #     await asyncio.wait_for(asyncio.shield(trace_task), timeout=10.0)
-            # except asyncio.TimeoutError:
-            #     print("[Memory] store_trace timed out — trace not persisted.", file=sys.stderr)
+            # ── Store trace ───────────────────────────────────────────────────────
+            from .memory import store_trace
+            await store_trace(
+                namespace=deps.memory_namespace,
+                task_summary=task,
+                outcome=result.output,
+            )
 
             return result.output
 

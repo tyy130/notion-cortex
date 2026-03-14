@@ -17,6 +17,7 @@ import os
 from pydantic_ai import Agent
 
 from .deps import AgentDeps
+from .memory import tool_recall
 from .tools import tool_read, tool_write, tool_query, tool_shell
 
 # ---------------------------------------------------------------------------
@@ -129,6 +130,7 @@ def get_agent() -> Agent[AgentDeps, str]:
 
         # Register forager tool
         _agent.tool(tool_search)
+        _agent.tool(tool_recall)
 
         # Per-run dynamic prompt injection from Domain Context Engine
         @_agent.system_prompt
