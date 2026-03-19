@@ -41,7 +41,7 @@ npm install -g notion-cortex
 Or run from source:
 
 ```bash
-git clone <repo-url>
+git clone https://github.com/tyy130/notion-cortex.git
 cd notion-cortex
 npm install
 npm run build
