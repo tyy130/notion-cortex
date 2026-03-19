@@ -6,6 +6,8 @@ tags: devchallenge, notionchallenge, mcp, ai
 cover_image:
 ---
 
+*This is a submission for the [Notion MCP Challenge](https://dev.to/challenges/notion-2026-03-04)*
+
 ## What I Built
 
 **Notion Cortex** is a multi-agent AI research system that uses Notion as its operating system — not just an output destination, but the shared coordination layer where agents think, communicate, and await human approval.
@@ -77,7 +79,7 @@ $ notion-cortex "The rise of autonomous AI agents in software engineering"
 
 ---
 
-## Demo
+## Video Demo
 
 {% embed https://asciinema.org/a/9aC2IBPJ0Y0i1BaQ %}
 
@@ -85,31 +87,7 @@ The demo shows a complete run from `notion-cortex "topic"` through all 5 agent p
 
 ---
 
-## How I Used Notion MCP
-
-Notion isn't just where output ends up — it's the runtime substrate. Here's how each database works as infrastructure:
-
-### 1. Task Bus (agent coordination)
-The orchestrator creates tasks, scouts claim them via `assigned_agent`, and status transitions (`pending → active → done → blocked`) drive the pipeline forward. This is a distributed task queue implemented entirely in Notion.
-
-### 2. Working Memory (streaming scratchpad)
-Each agent gets a dedicated Notion page. As tokens stream from the LLM, a timed buffer flushes them as paragraph blocks to the page every second. You can open a scout's Working Memory page and watch it think in real time.
-
-### 3. Knowledge Graph (structured entity store)
-Scouts extract entities (companies, products, trends, concepts) with claims, confidence levels, and source URLs. A serialized upsert queue (`pLimit(1)`) prevents duplicate entities when parallel scouts find the same thing. After the Analyst pass, `computeAndStoreRelations` scans all entities and auto-links them using Notion's relation property — if "GitHub Copilot" appears in another entity's claim, they get linked.
-
-### 4. Approval Gates (human-in-the-loop)
-Before the Writer runs, an approval gate creates a Notion database entry with status "Pending" and a link to the synthesis. The system polls with exponential backoff until you change the status to "Approved" or "Rejected" in Notion. This is genuine human-in-the-loop control — not a dialog box, but a Notion workflow.
-
-### 5. Outputs (final deliverables)
-The Writer converts its markdown output into native Notion blocks — headings, bullet lists, numbered lists, tables, code blocks, bold/italic, and links — using a custom `markdownToNotionBlocks` converter. The result is a proper Notion page, not a pasted text blob.
-
-### MCP Integration
-Scout agents use the **Notion MCP server** (`@notionhq/notion-mcp-server`) via stdio transport to search existing workspace content with `notion_search`. This lets scouts check what knowledge already exists before extracting new entities — avoiding redundant work across runs.
-
----
-
-## Show Us the Code
+## Show us the code
 
 **GitHub**: [github.com/tyy130/notion-cortex](https://github.com/tyy130/notion-cortex)
 
@@ -163,6 +141,29 @@ npm install
 notion-cortex setup    # interactive wizard
 notion-cortex "your research topic"
 ```
+
+---
+
+## How I Used Notion MCP
+
+Notion isn't just where output ends up — it's the runtime substrate. The **Notion MCP server** (`@notionhq/notion-mcp-server`) runs as a stdio subprocess, giving Scout agents access to `notion_search` — they check what knowledge already exists in the workspace before extracting new entities, avoiding redundant work across runs.
+
+Beyond MCP search, each database works as infrastructure through the Notion SDK:
+
+### 1. Task Bus (agent coordination)
+The orchestrator creates tasks, scouts claim them via `assigned_agent`, and status transitions (`pending → active → done → blocked`) drive the pipeline forward. This is a distributed task queue implemented entirely in Notion.
+
+### 2. Working Memory (streaming scratchpad)
+Each agent gets a dedicated Notion page. As tokens stream from the LLM, a timed buffer flushes them as paragraph blocks to the page every second. You can open a scout's Working Memory page and watch it think in real time.
+
+### 3. Knowledge Graph (structured entity store)
+Scouts extract entities (companies, products, trends, concepts) with claims, confidence levels, and source URLs. A serialized upsert queue (`pLimit(1)`) prevents duplicate entities when parallel scouts find the same thing. After the Analyst pass, `computeAndStoreRelations` scans all entities and auto-links them using Notion's relation property — if "GitHub Copilot" appears in another entity's claim, they get linked.
+
+### 4. Approval Gates (human-in-the-loop)
+Before the Writer runs, an approval gate creates a Notion database entry with status "Pending" and a link to the synthesis. The system polls with exponential backoff until you change the status to "Approved" or "Rejected" in Notion. This is genuine human-in-the-loop control — not a dialog box, but a Notion workflow.
+
+### 5. Outputs (final deliverables)
+The Writer converts its markdown output into native Notion blocks — headings, bullet lists, numbered lists, tables, code blocks, bold/italic, and links — using a custom `markdownToNotionBlocks` converter. The result is a proper Notion page, not a pasted text blob.
 
 ---
 
