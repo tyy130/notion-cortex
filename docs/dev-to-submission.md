@@ -57,25 +57,25 @@ $ notion-cortex "The rise of autonomous AI agents in software engineering"
 
 **Cortex parent page — all 5 databases auto-created:**
 
-![Cortex workspace showing 5 databases](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/01-workspace.png)
+![Cortex workspace showing 5 databases](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/01-workspace.png?v=2)
 
 **cortex-knowledge-graph — entities with sources, confidence, and auto-linked relations:**
 
-![Knowledge graph with entities and sources](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/02-knowledge-graph.png)
+![Knowledge graph with entities and sources](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/02-knowledge-graph.png?v=2)
 
 **cortex-task-bus — every agent's task tracked with status and priority:**
 
-![Task bus showing 8 completed tasks](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/03-task-bus.png)
+![Task bus showing 8 completed tasks](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/03-task-bus.png?v=2)
 
 **cortex-working-memory — each agent's live reasoning with token counts:**
 
-![Working memory with 8 agent pages](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/04-working-memory.png)
+![Working memory with 8 agent pages](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/04-working-memory.png?v=2)
 
 **Intelligence Brief — structured output with headings, entity table, and conclusions:**
 
-![Intelligence brief with executive summary](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/05-brief-top.png)
+![Intelligence brief with executive summary](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/05-brief-top.png?v=2)
 
-![Brief continued — entity table and conclusions](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/06-brief-table.png)
+![Brief continued — entity table and conclusions](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/06-brief-table.png?v=2)
 
 ---
 
