@@ -81,7 +81,7 @@ $ notion-cortex "The rise of autonomous AI agents in software engineering"
 
 ## Video Demo
 
-{% embed https://asciinema.org/a/9aC2IBPJ0Y0i1BaQ %}
+{% embed https://asciinema.org/a/rZU5tivnEZXeN5Na %}
 
 The demo shows a complete run from `notion-cortex "topic"` through all 5 agent phases to the final intelligence brief in Notion.
 
