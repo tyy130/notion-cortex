@@ -55,25 +55,25 @@ $ notion-cortex "The rise of autonomous AI agents in software engineering"
 
 **Cortex parent page — all 5 databases auto-created:**
 
-![Cortex workspace showing 5 databases](REPLACE_WITH_WORKSPACE_IMG)
+![Cortex workspace showing 5 databases](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/01-workspace.png)
 
 **cortex-knowledge-graph — entities with sources, confidence, and auto-linked relations:**
 
-![Knowledge graph with entities and sources](REPLACE_WITH_KG_IMG)
+![Knowledge graph with entities and sources](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/02-knowledge-graph.png)
 
 **cortex-task-bus — every agent's task tracked with status and priority:**
 
-![Task bus showing 8 completed tasks](REPLACE_WITH_TASKBUS_IMG)
+![Task bus showing 8 completed tasks](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/03-task-bus.png)
 
 **cortex-working-memory — each agent's live reasoning with token counts:**
 
-![Working memory with 8 agent pages](REPLACE_WITH_WM_IMG)
+![Working memory with 8 agent pages](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/04-working-memory.png)
 
 **Intelligence Brief — structured output with headings, entity table, and conclusions:**
 
-![Intelligence brief with executive summary](REPLACE_WITH_BRIEF_IMG)
+![Intelligence brief with executive summary](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/05-brief-top.png)
 
-![Brief continued — entity table and conclusions](REPLACE_WITH_BRIEF2_IMG)
+![Brief continued — entity table and conclusions](https://raw.githubusercontent.com/tyy130/notion-cortex/main/docs/screenshots/06-brief-table.png)
 
 ---
 
