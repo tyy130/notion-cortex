@@ -1,5 +1,7 @@
 # Notion Cortex
 
+> Archive note, April 2026: this project is no longer being actively developed. The repository is being kept as an archive of the DEV × Notion MCP Challenge work, and the local working tree may not contain a fully runnable source checkout.
+
 A multi-agent AI research system where **Notion is the operating system** — not just the output destination. Agents coordinate through live Notion databases, stream reasoning to Working Memory pages as they think, and require your approval in Notion before producing a final brief.
 
 Built for the [DEV × Notion MCP Challenge](https://dev.to/challenges/notion).
